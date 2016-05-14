@@ -1,7 +1,7 @@
 import Html exposing (..)
 import Html.App as Html
-import Html.Events exposing (onInput)
-import Html.Attributes exposing (style, width)
+import Html.Events exposing (onInput, onClick)
+import Html.Attributes exposing (style, width, autofocus)
 import Mandalart as M
 
 
@@ -21,11 +21,12 @@ type alias Model =
   { editing : Bool
   , currentPos : M.Position
   , root : M.Mandalart
+  , focus : Maybe Int
   }
 
 
 init =
-  (Model False [] initRoot, Cmd.none)
+  (Model True [] initRoot Nothing, Cmd.none)
 
 
 initRoot =
@@ -36,12 +37,29 @@ initRoot =
 
 type Msg
   = ChangeText M.Position String
+  | ChangeCenter M.Position
+  | Focus Int
+
 
 update msg model =
-  case msg of
+  case Debug.log "msg" msg of
     ChangeText pos newText ->
-      ({ model | root = M.updateText pos newText model.root}
-      , Cmd.none)
+      ( { model | root = M.updateText pos newText model.root }
+      , Cmd.none
+      )
+
+    ChangeCenter newPos ->
+      ( { model
+        | currentPos = newPos
+        , focus = Nothing
+        }
+      , Cmd.none
+      )
+
+    Focus pos ->
+      ( { model | focus = Just pos }
+      , Cmd.none
+      )
 
 
 -- Subscription
@@ -52,27 +70,49 @@ subscriptions model =
 
 -- View
 
-view {editing, currentPos, root} =
+view {editing, currentPos, root, focus} =
   let
-    center =
-      cellView currentPos root
     pos =
       currentPos
+
+    center =
+      let
+        edit =
+          case focus of
+            Nothing ->
+              False
+            
+            Just n ->
+              (editing && n == 5)
+      in
+        cellView pos (List.drop 1 pos) 5 edit root
+
+    createView i =
+      let
+        edit =
+          case focus of
+            Nothing ->
+              False
+            
+            Just n ->
+              (editing && n == i)
+      in
+        cellView (pos ++ [i]) (pos ++ [i]) i edit root
   in
     div
       [ style
-          [ "width" => "400px"
+          [ "width" => (toString (cellSize * 3) ++ "px")
           ]
       ]
-      [ cellView (1::pos) root, cellView (2::pos) root, cellView (3::pos) root
-      , cellView (4::pos) root, cellView     pos  root, cellView (6::pos) root
-      , cellView (7::pos) root, cellView (8::pos) root, cellView (9::pos) root
+      [ createView 1, createView 2, createView 3
+      , createView 4, center      , createView 6
+      , createView 7, createView 8, createView 9
       , text (toString root)
       ]
 
 
 cellSize : Int
-cellSize = 100
+cellSize = 200
 
 
 (=>) = (,)
@@ -86,10 +126,49 @@ cellStyle =
     style
       [ "height" => cellSizePx
       , "width" => cellSizePx
+      , "float" => "left"
       ]
 
+buttonStyle =
+  style
+    [ "width" => "auto"
+    , "height" => "auto"
+    ]
 
-cellView pos root =
-  textarea
-    [ onInput (ChangeText pos), cellStyle ]
-    [ text <| M.getText pos root]
+
+textareaStyle =
+  style
+    [ "width" => "180px"
+    , "height" => "130px"
+    ]
+
+
+cellView pos selPos focusPos edit root =
+  div
+    [ cellStyle
+    ]
+    [ button
+        [ onClick (ChangeCenter selPos)
+        , buttonStyle
+        ]
+        [ text "select" ]
+    , if edit then
+        textarea
+          [ onInput (ChangeText pos)
+          , textareaStyle
+          , autofocus False
+          ]
+          [ text <| M.getText pos root
+          ]
+      else
+        div
+          [ onClick (Focus focusPos)
+          , style
+            [ "outline" => "solid"
+            , "height" => ((toString (cellSize - 50)) ++ "px")
+            , "width" => ((toString (cellSize - 10)) ++ "px")
+            ]
+          ]
+          [ text <| M.getText pos root
+          ]
+    ]
