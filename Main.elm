@@ -1,6 +1,7 @@
 import Html exposing (..)
 import Html.App as Html
 import Html.Events exposing (onInput)
+import Html.Attributes exposing (style, width)
 import Mandalart as M
 
 
@@ -51,8 +52,44 @@ subscriptions model =
 
 -- View
 
-view {currentPos, root} =
-  div [] <|
-    [ text <| M.getText currentPos root
-    , input [onInput (ChangeText currentPos)] []
-    ]
+view {editing, currentPos, root} =
+  let
+    center =
+      cellView currentPos root
+    pos =
+      currentPos
+  in
+    div
+      [ style
+          [ "width" => "400px"
+          ]
+      ]
+      [ cellView (1::pos) root, cellView (2::pos) root, cellView (3::pos) root
+      , cellView (4::pos) root, cellView     pos  root, cellView (6::pos) root
+      , cellView (7::pos) root, cellView (8::pos) root, cellView (9::pos) root
+      , text (toString root)
+      ]
+
+
+cellSize : Int
+cellSize = 100
+
+
+(=>) = (,)
+
+
+cellStyle =
+  let
+    cellSizePx =
+      (toString cellSize) ++ "px"
+  in
+    style
+      [ "height" => cellSizePx
+      , "width" => cellSizePx
+      ]
+
+
+cellView pos root =
+  textarea
+    [ onInput (ChangeText pos), cellStyle ]
+    [ text <| M.getText pos root]
