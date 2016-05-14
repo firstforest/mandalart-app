@@ -1,6 +1,6 @@
 import Html exposing (..)
 import Html.App as Html
-import Html.Events exposing (onInput, onClick)
+import Html.Events exposing (onInput, onClick, onDoubleClick)
 import Html.Attributes exposing (style, width, autofocus)
 import Mandalart as M
 import Keyboard
@@ -244,6 +244,7 @@ cellView pos selPos focusPos edit focus root =
       else
         div
           [ onClick (Focus focusPos)
+          , onDoubleClick (SetEditMode True)
           , style
             [ "outline" => "solid"
             , "outline-color" => if focus == focusPos then "red" else "black"
