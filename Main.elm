@@ -3,6 +3,7 @@ import Html.App as Html
 import Html.Events exposing (onInput, onClick)
 import Html.Attributes exposing (style, width, autofocus)
 import Mandalart as M
+import Keyboard
 
 
 
@@ -21,12 +22,12 @@ type alias Model =
   { editing : Bool
   , currentPos : M.Position
   , root : M.Mandalart
-  , focus : Maybe Int
+  , focus : Int
   }
 
 
 init =
-  (Model True [] initRoot Nothing, Cmd.none)
+  (Model False [] initRoot 5, Cmd.none)
 
 
 initRoot =
@@ -39,6 +40,7 @@ type Msg
   = ChangeText M.Position String
   | ChangeCenter M.Position
   | Focus Int
+  | None
 
 
 update msg model =
@@ -51,21 +53,51 @@ update msg model =
     ChangeCenter newPos ->
       ( { model
         | currentPos = newPos
-        , focus = Nothing
+        , focus = 5
         }
       , Cmd.none
       )
 
     Focus pos ->
-      ( { model | focus = Just pos }
+      ( { model | focus = pos }
       , Cmd.none
       )
 
+    _ ->
+      (model, Cmd.none)
 
 -- Subscription
 
 subscriptions model =
-  Sub.none
+  if model.editing then
+    Sub.none
+  else
+    let
+      nextFocus d current =
+        let
+          t = current + d
+        in
+          if t < 1 then
+            t + 9
+          else if 9 < t then
+            t - 9
+          else
+            t
+
+      f key =
+        case key of
+          37 -> -- left
+            Focus (nextFocus -1 model.focus)
+          38 -> -- up
+            Focus (nextFocus -3 model.focus)
+          39 -> -- right
+            Focus (nextFocus 1 model.focus)
+          40 -> -- down
+            Focus (nextFocus 3 model.focus)
+          _ ->
+            None
+    in
+      Keyboard.downs f
 
 
 -- View
@@ -78,26 +110,16 @@ view {editing, currentPos, root, focus} =
     center =
       let
         edit =
-          case focus of
-            Nothing ->
-              False
-            
-            Just n ->
-              (editing && n == 5)
+          editing && (focus == 5)
       in
-        cellView pos (List.drop 1 pos) 5 edit root
+        cellView pos (List.drop 1 pos) 5 edit focus root
 
     createView i =
       let
         edit =
-          case focus of
-            Nothing ->
-              False
-            
-            Just n ->
-              (editing && n == i)
+            editing && focus == i
       in
-        cellView (pos ++ [i]) (pos ++ [i]) i edit root
+        cellView (pos ++ [i]) (pos ++ [i]) i edit focus root
   in
     div
       [ style
@@ -143,7 +165,7 @@ textareaStyle =
     ]
 
 
-cellView pos selPos focusPos edit root =
+cellView pos selPos focusPos edit focus root =
   div
     [ cellStyle
     ]
@@ -165,6 +187,7 @@ cellView pos selPos focusPos edit root =
           [ onClick (Focus focusPos)
           , style
             [ "outline" => "solid"
+            , "outline-color" => if focus == focusPos then "red" else "black"
             , "height" => ((toString (cellSize - 50)) ++ "px")
             , "width" => ((toString (cellSize - 10)) ++ "px")
             ]
