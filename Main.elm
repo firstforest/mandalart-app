@@ -4,7 +4,7 @@ import Html.Events exposing (onInput, onClick)
 import Html.Attributes exposing (style, width, autofocus)
 import Mandalart as M
 import Keyboard
-
+import Markdown
 
 
 main =
@@ -178,6 +178,8 @@ view {editing, currentPos, root, focus} =
       in
         cellView (pos ++ [i]) (pos ++ [i]) i edit focus root
   in
+    div []
+    [
     div
       [ style
           [ "width" => (toString (cellSize * 3) ++ "px")
@@ -186,9 +188,9 @@ view {editing, currentPos, root, focus} =
       [ createView 1, createView 2, createView 3
       , createView 4, center      , createView 6
       , createView 7, createView 8, createView 9
-      , text (toString root)
       ]
-
+    , Markdown.toHtml [style ["float" => "left"]] (M.toStringList root)
+    ]
 
 cellSize : Int
 cellSize = 200

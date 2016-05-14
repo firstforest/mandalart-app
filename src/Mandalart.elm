@@ -3,6 +3,7 @@ module Mandalart exposing (..)
 
 import Html exposing (..)
 import Dict
+import String
 
 
 
@@ -72,3 +73,13 @@ getText pos (Cell {cellText, cells}) =
           Maybe.withDefault defCell (Dict.get i cells)
       in
         getText (List.drop 1 pos) mart'
+
+
+toStringList : Mandalart -> String
+toStringList (Cell { cellText, cells }) =
+  let
+    cellsText =
+      Dict.values cells |> List.map toStringList
+        |> String.join "<br>"
+  in
+    cellText ++ "<br>" ++ cellsText
