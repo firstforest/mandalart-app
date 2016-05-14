@@ -138,10 +138,23 @@ subscriptions model =
             Focus (nextFocus 3 model.focus)
           13 -> -- enter
             SetEditMode True
+          32 -> -- space
+            if model.focus == 5 then
+              ChangeCenter (List.drop 1 model.currentPos)
+            else
+              ChangeCenter (model.focus :: model.currentPos)
+          _ ->
+            None
+
+      ups key =
+        case key of
+          17 ->
+            UpCtrl
+
           _ ->
             None
     in
-      Keyboard.downs f
+      Sub.batch [Keyboard.downs f, Keyboard.ups ups]
 
 
 -- View
