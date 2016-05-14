@@ -1,0 +1,26 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Mandalart</title>
+  <script type="text/javascript" src="elm.js"></script>
+</head>
+
+<body>
+</body>
+
+<script type="text/javascript">
+var mandalart = Elm.Main.fullscreen();
+mandalart.ports.focus.subscribe(function(selector) {
+    setTimeout(function() {
+        console.log("hoge");
+        var nodes = document.querySelectorAll(selector);
+        if (nodes.length === 1 && document.activeElement !== nodes[0]) {
+            nodes[0].focus();
+        }
+    }, 50)
+});
+</script>
+
+</html>
