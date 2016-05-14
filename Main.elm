@@ -1,7 +1,9 @@
+port module Main exposing (..)
+
 import Html exposing (..)
 import Html.App as Html
 import Html.Events exposing (onInput, onClick, onDoubleClick)
-import Html.Attributes exposing (style, width, autofocus)
+import Html.Attributes exposing (style, width, autofocus, id)
 import Mandalart as M
 import Keyboard
 import Markdown
@@ -14,6 +16,9 @@ main =
     , update = update
     , subscriptions = subscriptions
     }
+
+
+port focus : String -> Cmd msg
 
 
 --Model
@@ -64,12 +69,12 @@ update msg model =
 
     Focus pos ->
       ( { model | focus = pos }
-      , Cmd.none
+      , focus "#editArea"
       )
 
     SetEditMode b ->
       ( { model | editing = b }
-      , Cmd.none
+      , focus "#editArea"
       )
 
     DownCtrl ->
@@ -87,22 +92,44 @@ update msg model =
 
 -- Subscription
 
+nextFocus d current =
+  let
+    t = current + d
+  in
+    if t < 1 then
+      t + 9
+    else if 9 < t then
+      t - 9
+    else
+      t
+
+
 subscriptions model =
   if model.editing then
     let
       downs key =
-        case key of
-          13 -> -- enter
-            if model.isCtrlDown then
+        if model.isCtrlDown then
+          case key of
+            37 -> -- left
+              Focus (nextFocus -1 model.focus)
+            38 -> -- up
+              Focus (nextFocus -3 model.focus)
+            39 -> -- right
+              Focus (nextFocus 1 model.focus)
+            40 -> -- down
+              Focus (nextFocus 3 model.focus)
+            13 -> -- enter
               SetEditMode False
-            else
+            _ ->
               None
-
-          17 -> -- ctrl
-            DownCtrl
-
-          _ ->
-            None
+        else
+          case key of
+            17 -> -- ctrl
+              DownCtrl
+            9 -> -- tab
+              Focus (nextFocus 1 model.focus)
+            _ ->
+              None
 
       ups key =
         case key of
@@ -115,17 +142,6 @@ subscriptions model =
       Sub.batch [Keyboard.downs downs, Keyboard.ups ups]
   else
     let
-      nextFocus d current =
-        let
-          t = current + d
-        in
-          if t < 1 then
-            t + 9
-          else if 9 < t then
-            t - 9
-          else
-            t
-
       f key =
         case key of
           37 -> -- left
@@ -238,6 +254,7 @@ cellView pos selPos focusPos edit focus root =
           [ onInput (ChangeText pos)
           , textareaStyle
           , autofocus False
+          , id "editArea"
           ]
           [ text <| M.getText pos root
           ]
