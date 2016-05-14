@@ -23,11 +23,12 @@ type alias Model =
   , currentPos : M.Position
   , root : M.Mandalart
   , focus : Int
+  , isCtrlDown : Bool
   }
 
 
 init =
-  (Model False [] initRoot 5, Cmd.none)
+  (Model False [] initRoot 5 False, Cmd.none)
 
 
 initRoot =
@@ -41,6 +42,9 @@ type Msg
   | ChangeCenter M.Position
   | Focus Int
   | None
+  | SetEditMode Bool
+  | DownCtrl
+  | UpCtrl
 
 
 update msg model =
@@ -63,6 +67,21 @@ update msg model =
       , Cmd.none
       )
 
+    SetEditMode b ->
+      ( { model | editing = b }
+      , Cmd.none
+      )
+
+    DownCtrl ->
+      ( { model | isCtrlDown = True }
+      , Cmd.none
+      )
+
+    UpCtrl ->
+      ( { model | isCtrlDown = False }
+      , Cmd.none
+      )
+
     _ ->
       (model, Cmd.none)
 
@@ -70,7 +89,30 @@ update msg model =
 
 subscriptions model =
   if model.editing then
-    Sub.none
+    let
+      downs key =
+        case key of
+          13 -> -- enter
+            if model.isCtrlDown then
+              SetEditMode False
+            else
+              None
+
+          17 -> -- ctrl
+            DownCtrl
+
+          _ ->
+            None
+
+      ups key =
+        case key of
+          17 ->
+            UpCtrl
+
+          _ ->
+            None
+    in
+      Sub.batch [Keyboard.downs downs, Keyboard.ups ups]
   else
     let
       nextFocus d current =
@@ -94,6 +136,8 @@ subscriptions model =
             Focus (nextFocus 1 model.focus)
           40 -> -- down
             Focus (nextFocus 3 model.focus)
+          13 -> -- enter
+            SetEditMode True
           _ ->
             None
     in
